@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DeepLeaf - Smart Plant Disease Detection</title>
+<style>
+  :root {
+    --primary-50: #f0fdf4; --primary-100: #dcfce7; --primary-200: #bbf7d0;
+    --primary-300: #86efac; --primary-400: #4ade80; --primary-500: #22c55e;
+    --primary-600: #16a34a; --primary-700: #15803d; --primary-800: #166534;
+    --primary-900: #14532d;
+    --accent-400: #a3e635; --accent-500: #84cc16;
+    --earth-50: #fefce8; --earth-100: #fef9c3;
+    --red-500: #ef4444; --red-600: #dc2626; --red-50: #fef2f2;
+    --amber-500: #f59e0b; --amber-600: #d97706; --amber-50: #fffbeb;
+    --blue-500: #3b82f6; --blue-600: #2563eb; --blue-50: #eff6ff;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+    --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+    --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-xl: 24px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--gray-800); background: var(--gray-50); line-height: 1.6; }
+  a { text-decoration: none; color: inherit; }
+  img { max-width: 100%; display: block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px; border-radius: var(--radius-md); font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; gap: 8px; }
+  .btn-primary { background: var(--primary-700); color: #fff; }
+  .btn-primary:hover { background: var(--primary-800); }
+  .btn-secondary { background: var(--accent-400); color: var(--primary-900); }
+  .btn-secondary:hover { background: var(--accent-500); }
+  .btn-outline { background: transparent; border: 2px solid #fff; color: #fff; }
+  .btn-outline:hover { background: rgba(255,255,255,0.1); }
+  .btn-sm { padding: 7px 16px; font-size: 13px; }
+  .btn-lg { padding: 14px 32px; font-size: 16px; }
+  .card { background: #fff; border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--primary-100); transition: box-shadow 0.2s; }
+  .card-hover:hover { box-shadow: 0 8px 30px rgba(22,101,52,0.1); }
+  .badge { display: inline-flex; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge-healthy { background: var(--primary-100); color: var(--primary-700); }
+  .badge-warning { background: var(--amber-50); color: var(--amber-600); }
+  .badge-critical { background: var(--red-50); color: var(--red-600); }
+  .badge-info { background: var(--blue-50); color: var(--blue-600); }
+  .badge-success { background: var(--primary-100); color: var(--primary-700); }
+
+  /* NAVBAR */
+  .navbar { position: sticky; top: 0; z-index: 50; background: rgba(249,250,251,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--primary-100); }
+  .navbar-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .navbar-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; color: var(--primary-800); }
+  .navbar-brand svg { color: var(--primary-600); }
+  .navbar-links { display: flex; gap: 32px; }
+  .navbar-links a { font-size: 14px; font-weight: 500; color: var(--gray-500); transition: color 0.2s; }
+  .navbar-links a:hover, .navbar-links a.active { color: var(--primary-700); }
+
+  /* HERO */
+  .hero { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--primary-800), var(--primary-700), var(--primary-900)); color: #fff; }
+  .hero-glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.1; }
+  .hero-glow-1 { width: 300px; height: 300px; top: 40px; left: 40px; background: var(--accent-400); }
+  .hero-glow-2 { width: 400px; height: 400px; bottom: 60px; right: 60px; background: var(--primary-300); }
+  .hero-glow-3 { width: 200px; height: 200px; top: 50%; left: 33%; background: var(--primary-400); }
+  .hero-content { position: relative; text-align: center; padding: 100px 0 80px; max-width: 700px; margin: 0 auto; }
+  .hero-icon { display: inline-flex; padding: 14px; background: rgba(255,255,255,0.1); border-radius: 16px; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+  .hero h1 { font-size: 48px; font-weight: 700; line-height: 1.15; letter-spacing: -0.5px; }
+  .hero h1 span { color: var(--accent-400); }
+  .hero p { margin-top: 20px; font-size: 18px; color: var(--primary-200); line-height: 1.7; }
+  .hero-buttons { margin-top: 36px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .hero-tags { margin-top: 40px; display: flex; gap: 32px; justify-content: center; font-size: 14px; color: var(--primary-300); }
+  .hero-tags span { display: flex; align-items: center; gap: 8px; }
+  .hero-tags .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-400); }
+
+  /* HOW IT WORKS */
+  .section { padding: 80px 0; }
+  .section-header { text-align: center; margin-bottom: 48px; }
+  .section-header h2 { font-size: 32px; font-weight: 700; color: var(--gray-800); }
+  .section-header p { margin-top: 12px; font-size: 16px; color: var(--gray-500); }
+  .section-header .divider { margin: 16px auto 0; width: 60px; height: 4px; background: var(--primary-500); border-radius: 2px; }
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step-card { text-align: center; position: relative; }
+  .step-number { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary-700); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+  .step-icon { display: inline-flex; padding: 18px; background: var(--primary-50); color: var(--primary-700); border-radius: 16px; margin-top: 8px; }
+  .step-card h3 { margin-top: 16px; font-size: 20px; font-weight: 700; color: var(--gray-800); }
+  .step-card p { margin-top: 8px; font-size: 14px; color: var(--gray-500); line-height: 1.6; }
+
+  /* FEATURES */
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .feature-icon { padding: 12px; background: var(--primary-50); color: var(--primary-700); border-radius: 12px; display: inline-flex; }
+  .feature-card h3 { margin-top: 16px; font-size: 18px; font-weight: 700; }
+  .feature-card p { margin-top: 8px; font-size: 14px; color: var(--gray-500); line-height: 1.6; }
+
+  /* STATS */
+  .stats-section { background: var(--primary-50); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .stat-card { text-align: center; }
+  .stat-card .stat-icon { display: inline-flex; padding: 14px; background: var(--primary-100); color: var(--primary-700); border-radius: 14px; margin-bottom: 12px; }
+  .stat-card .stat-value { font-size: 32px; font-weight: 700; color: var(--primary-800); }
+  .stat-card .stat-label { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
+
+  /* UPLOAD SECTION */
+  .upload-section { background: var(--earth-50); }
+  .upload-area { border: 2px dashed var(--primary-300); border-radius: var(--radius-lg); padding: 48px; text-align: center; background: #fff; max-width: 600px; margin: 0 auto; }
+  .upload-area svg { margin: 0 auto 16px; color: var(--primary-400); }
+  .upload-area h3 { font-size: 18px; font-weight: 600; }
+  .upload-area p { font-size: 14px; color: var(--gray-400); margin-top: 8px; }
+  .upload-area .btn { margin-top: 16px; }
+
+  /* ANALYSIS RESULT */
+  .analysis-section { padding: 40px 0; }
+  .analysis-card { max-width: 800px; margin: 0 auto; }
+  .analysis-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .analysis-header .scan-icon { padding: 12px; background: var(--primary-50); color: var(--primary-700); border-radius: 12px; }
+  .analysis-header h3 { font-size: 20px; font-weight: 700; }
+  .analysis-header p { font-size: 13px; color: var(--gray-400); }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .result-item { padding: 16px; background: var(--gray-50); border-radius: var(--radius-md); }
+  .result-item .label { font-size: 12px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; }
+  .result-item .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .result-item .value.healthy { color: var(--primary-600); }
+  .result-item .value.warning { color: var(--amber-600); }
+  .result-item .value.critical { color: var(--red-600); }
+
+  /* PROGRESS BAR */
+  .progress-bar { height: 10px; background: var(--gray-100); border-radius: 999px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; border-radius: 999px; transition: width 0.8s ease; }
+  .fill-green { background: linear-gradient(90deg, var(--primary-400), var(--primary-600)); }
+  .fill-red { background: linear-gradient(90deg, var(--red-500), var(--red-600)); }
+  .fill-amber { background: linear-gradient(90deg, var(--amber-500), var(--amber-600)); }
+
+  /* CLASS SCORES */
+  .class-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .class-score-item { background: var(--gray-50); border-radius: var(--radius-md); padding: 14px; }
+  .class-score-item .cs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .class-score-item .cs-name { font-size: 13px; font-weight: 600; text-transform: capitalize; }
+  .class-score-item .cs-value { font-size: 13px; font-weight: 700; }
+  .class-score-item .cs-bar { height: 6px; background: var(--gray-200); border-radius: 999px; overflow: hidden; }
+  .class-score-item .cs-bar .fill { height: 100%; border-radius: 999px; }
+
+  /* PLANT DASHBOARD */
+  .plants-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .plant-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .plant-card-header h4 { font-size: 18px; font-weight: 700; }
+  .plant-card-header .crop-type { font-size: 13px; color: var(--gray-400); text-transform: capitalize; }
+  .plant-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .plant-metric { padding: 10px; background: var(--primary-50); border-radius: var(--radius-sm); text-align: center; }
+  .plant-metric .pm-label { font-size: 11px; color: var(--gray-400); }
+  .plant-metric .pm-value { font-size: 15px; font-weight: 700; color: var(--gray-800); margin-top: 2px; }
+  .progress-section { margin-top: 16px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+  .progress-labels .pl-name { color: var(--gray-500); }
+  .progress-labels .pl-value { font-weight: 700; }
+
+  /* PLANT DETAIL */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .detail-full { grid-column: 1 / -1; }
+  .health-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .health-stat { padding: 12px; background: var(--primary-50); border-radius: var(--radius-md); text-align: center; }
+  .health-stat .hs-label { font-size: 11px; color: var(--gray-400); }
+  .health-stat .hs-value { font-size: 16px; font-weight: 700; color: var(--gray-800); margin-top: 4px; }
+  .health-stat .hs-value.improving { color: var(--primary-600); }
+  .health-stat .hs-value.worsening { color: var(--red-500); }
+  .health-stat .hs-value.stable { color: var(--gray-600); }
+
+  /* TIMELINE */
+  .timeline { position: relative; }
+  .timeline::before { content: ''; position: absolute; left: 30px; top: 0; bottom: 0; width: 2px; background: var(--primary-100); }
+  .timeline-item { position: relative; padding-left: 56px; padding-top: 16px; padding-bottom: 16px; cursor: pointer; transition: background 0.2s; border-radius: var(--radius-sm); }
+  .timeline-item:hover { background: rgba(240,253,244,0.5); }
+  .timeline-dot { position: absolute; left: 22px; top: 24px; width: 16px; height: 16px; background: var(--primary-500); border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .timeline-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .timeline-date { font-size: 14px; font-weight: 500; }
+  .timeline-diagnosis { font-size: 13px; color: var(--gray-400); margin-top: 2px; }
+  .timeline-details { display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .timeline-details.show { display: grid; }
+  .timeline-detail { padding: 8px; background: var(--earth-50); border-radius: var(--radius-sm); }
+  .timeline-detail .td-label { font-size: 11px; color: var(--gray-400); }
+  .timeline-detail .td-value { font-size: 14px; font-weight: 600; }
+
+  /* SPRAY LOG */
+  .spray-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--primary-50); }
+  .spray-item:last-child { border-bottom: none; }
+  .spray-icon { padding: 10px; background: var(--primary-50); color: var(--primary-600); border-radius: var(--radius-md); flex-shrink: 0; }
+  .spray-info { flex: 1; }
+  .spray-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .spray-name { font-size: 14px; font-weight: 500; }
+  .spray-time { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  .spray-meta { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--gray-500); }
+  .spray-meta strong { color: var(--gray-700); }
+
+  /* CHART */
+  .chart-container { height: 280px; position: relative; margin-top: 16px; }
+  .chart-svg { width: 100%; height: 100%; }
+  .chart-legend { display: flex; gap: 24px; justify-content: center; margin-top: 12px; font-size: 12px; color: var(--gray-500); }
+  .chart-legend span { display: flex; align-items: center; gap: 6px; }
+  .chart-legend .legend-line { width: 20px; height: 3px; border-radius: 2px; }
+
+  /* COHORT */
+  .cohort-box { padding: 16px; background: var(--earth-50); border-radius: var(--radius-md); margin-top: 16px; }
+  .cohort-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cohort-text { font-size: 14px; color: var(--gray-500); line-height: 1.6; }
+
+  /* DISEASE CARDS */
+  .disease-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 900px; margin: 0 auto; }
+  .disease-card { border-left: 4px solid var(--gray-200); }
+  .disease-card.bacterial { border-left-color: var(--red-500); }
+  .disease-card.blackrot { border-left-color: var(--amber-500); }
+  .disease-card.downy { border-left-color: var(--blue-500); }
+  .disease-card.healthy { border-left-color: var(--primary-500); }
+  .disease-card h4 { font-size: 16px; font-weight: 700; text-transform: capitalize; }
+  .disease-card .disease-desc { font-size: 13px; color: var(--gray-500); margin-top: 6px; line-height: 1.5; }
+  .disease-card .disease-treatment { margin-top: 12px; padding: 10px; background: var(--gray-50); border-radius: var(--radius-sm); }
+  .disease-card .disease-treatment .dt-label { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; }
+  .disease-card .disease-treatment .dt-value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+  /* ENV DATA */
+  .env-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .env-item { text-align: center; padding: 16px; background: var(--gray-50); border-radius: var(--radius-md); }
+  .env-item .env-icon { font-size: 24px; margin-bottom: 4px; }
+  .env-item .env-label { font-size: 12px; color: var(--gray-400); }
+  .env-item .env-value { font-size: 20px; font-weight: 700; color: var(--gray-800); }
+
+  /* SECTION TABS */
+  .tabs { display: flex; gap: 4px; background: var(--gray-100); padding: 4px; border-radius: var(--radius-md); width: fit-content; margin-bottom: 32px; }
+  .tab { padding: 8px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--gray-500); border: none; background: none; transition: all 0.2s; }
+  .tab.active { background: #fff; color: var(--gray-800); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* FOOTER */
+  .footer { background: var(--primary-900); color: var(--primary-300); padding: 48px 0 24px; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+  .footer-brand { font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .footer-brand svg { color: var(--primary-400); }
+  .footer-desc { margin-top: 12px; font-size: 14px; line-height: 1.6; }
+  .footer h4 { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+  .footer ul { list-style: none; }
+  .footer li { margin-bottom: 8px; }
+  .footer li a { font-size: 14px; color: var(--primary-300); transition: color 0.2s; }
+  .footer li a:hover { color: #fff; }
+  .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; text-align: center; font-size: 13px; }
+
+  /* NAV LINKS FOR PAGE */
+  .page-nav { display: flex; gap: 8px; justify-content: center; padding: 16px; background: var(--primary-800); flex-wrap: wrap; }
+  .page-nav a { padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--primary-200); transition: all 0.2s; }
+  .page-nav a:hover, .page-nav a.active { background: rgba(255,255,255,0.15); color: #fff; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--primary-800); color: #fff; padding: 14px 24px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; z-index: 100; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* SCROLL */
+  section[id] { scroll-margin-top: 80px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 32px; }
+    .steps-grid, .features-grid, .plants-grid, .disease-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: 1fr; }
+    .class-scores { grid-template-columns: 1fr; }
+    .health-stats { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .timeline-details { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+
+  /* PULSE ANIMATION */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+  .live-dot { width: 8px; height: 8px; background: var(--primary-500); border-radius: 50%; display: inline-block; animation: pulse 1.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="#" class="navbar-brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+      DeepLeaf
+    </a>
+    <div class="navbar-links">
+      <a href="#home" class="active">Home</a>
+      <a href="#dashboard">Plants</a>
+      <a href="#analysis">Analysis</a>
+      <a href="#diseases">Diseases</a>
+      <a href="#detail">Plant Detail</a>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Upload feature - connect your camera or upload a leaf photo')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      Upload Photo
+    </button>
+  </div>
+</nav>
+
+<!-- PAGE NAV -->
+<div class="page-nav">
+  <a href="#home" class="active">Landing</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#features">Features</a>
+  <a href="#stats">Stats</a>
+  <a href="#upload">Upload</a>
+  <a href="#analysis">Real-time Analysis</a>
+  <a href="#diseases">Disease Catalog</a>
+  <a href="#dashboard">Plant Dashboard</a>
+  <a href="#detail">Plant Detail</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-glow hero-glow-3"></div>
+  <div class="container hero-content">
+    <div class="hero-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a3e635" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+    </div>
+    <h1>Protect Your Crops with <span>AI-Powered</span> Detection</h1>
+    <p>DeepLeaf uses advanced machine learning (EfficientNet-B0) to detect plant diseases from a single photo. Get instant diagnosis, treatment recommendations, and keep your crops healthy.</p>
+    <div class="hero-buttons">
+      <a href="#upload" class="btn btn-secondary btn-lg">Upload a Photo</a>
+      <a href="#dashboard" class="btn btn-outline btn-lg">View Dashboard</a>
+    </div>
+    <div class="hero-tags">
+      <span><span class="dot"></span>Real-time Detection</span>
+      <span><span class="dot"></span>Treatment Plans</span>
+      <span><span class="dot"></span>Raspberry Pi Ready</span>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works" style="background: var(--earth-50);">
+  <div class="container">
+    <div class="section-header">
+      <h2>How It Works</h2>
+      <p>Three simple steps to protect your crops from disease</p>
+      <div class="divider"></div>
+    </div>
+    <div class="steps-grid">
+      <div class="card card-hover step-card">
+        <span class="step-number">Step 01</span>
+        <div class="step-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+        <h3>Capture</h3>
+        <p>Take a photo of your plant leaf using your phone, camera, or Raspberry Pi device.</p>
+      </div>
+      <div class="card card-hover step-card">
+        <span class="step-number">Step 02</span>
+        <div class="step-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m11 8-1 4 4-1"/></svg>
+        </div>
+        <h3>Analyze</h3>
+        <p>Our AI model (EfficientNet-B0) scans the image and identifies diseases with 95% accuracy.</p>
+      </div>
+      <div class="card card-hover step-card">
+        <span class="step-number">Step 03</span>
+        <div class="step-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+        </div>
+        <h3>Treat</h3>
+        <p>Receive actionable treatment recommendations, dosage info, and preventive measures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <h2>Powerful Features</h2>
+      <p>Everything you need to monitor and protect your crops</p>
+      <div class="divider"></div>
+    </div>
+    <div class="features-grid">
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <h3>Disease Detection</h3>
+        <p>EfficientNet-B0 powered detection identifies bacterial spot rot, black rot, and downy mildew from leaf images.</p>
+      </div>
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+        </div>
+        <h3>Treatment Recommendations</h3>
+        <p>Get specific pesticide recommendations with correct dosage for each detected disease.</p>
+      </div>
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+        </div>
+        <h3>Environmental Monitoring</h3>
+        <p>Track temperature, humidity, and soil moisture data alongside disease analysis.</p>
+      </div>
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Cohort Analysis</h3>
+        <p>Compare plants to determine if disease is environmental or plant-specific (isolated vs shared).</p>
+      </div>
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <h3>Historical Trends</h3>
+        <p>Visualize disease severity over time with detailed charts and trend analysis.</p>
+      </div>
+      <div class="card card-hover feature-card">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h3>Spray Tracking</h3>
+        <p>Log and track all pesticide applications with dosage history and effectiveness.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section stats-section" id="stats">
+  <div class="container">
+    <div class="section-header">
+      <h2>Trusted by Farmers</h2>
+      <p>DeepLeaf is making agriculture smarter, one leaf at a time</p>
+      <div class="divider"></div>
+    </div>
+    <div class="stats-grid">
+      <div class="card stat-card"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div><div class="stat-value">248</div><div class="stat-label">Plants Monitored</div></div>
+      <div class="card stat-card"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m11 8-1 4 4-1"/></svg></div><div class="stat-value">95.2%</div><div class="stat-label">Detection Accuracy</div></div>
+      <div class="card stat-card"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div><div class="stat-value">4</div><div class="stat-label">Disease Classes</div></div>
+      <div class="card stat-card"><div class="stat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg></div><div class="stat-value">24/7</div><div class="stat-label">Real-time Monitoring</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- UPLOAD SECTION -->
+<section class="section upload-section" id="upload">
+  <div class="container">
+    <div class="section-header">
+      <h2>Upload a Plant Photo</h2>
+      <p>Drag and drop or click to upload a leaf image for instant AI analysis</p>
+      <div class="divider"></div>
+    </div>
+    <div class="upload-area">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <h3>Drop your leaf image here</h3>
+      <p>Supports JPG, PNG, WebP up to 10MB</p>
+      <button class="btn btn-primary" onclick="simulateUpload()">Choose File &amp; Analyze</button>
+    </div>
+  </div>
+</section>
+
+<!-- REAL-TIME ANALYSIS RESULT -->
+<section class="section analysis-section" id="analysis" style="background: var(--primary-50);">
+  <div class="container">
+    <div class="section-header">
+      <h2>Real-time Analysis Results</h2>
+      <p>Latest scan from plant PLT-007 - <span class="live-dot"></span> Live</p>
+      <div class="divider"></div>
+    </div>
+    <div class="card analysis-card" style="max-width:900px;">
+      <div class="analysis-header">
+        <div class="scan-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m11 8-1 4 4-1"/></svg>
+        </div>
+        <div>
+          <h3>Scan Result &mdash; Downy Mildew Detected</h3>
+          <p>PLT-007 &bull; Sep 24, 2026 at 14:32 &bull; Confidence: 91.4%</p>
+        </div>
+        <span class="badge badge-warning" style="margin-left:auto;">Moderate Severity</span>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="label">Disease Detected</div>
+          <div class="value warning">Downy Mildew</div>
+        </div>
+        <div class="result-item">
+          <div class="label">Disease Present Score</div>
+          <div class="value warning">73%</div>
+          <div class="progress-bar" style="margin-top:8px;"><div class="fill fill-amber" style="width:73%;"></div></div>
+        </div>
+        <div class="result-item">
+          <div class="label">Recommended Pesticide</div>
+          <div class="value" style="color:var(--blue-600);">Chlorothalonil</div>
+        </div>
+        <div class="result-item">
+          <div class="label">Recommended Dosage</div>
+          <div class="value">18 ml</div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:24px; font-size:15px; font-weight:600; color:var(--gray-700);">Class Probabilities</h4>
+      <div class="class-scores">
+        <div class="class-score-item">
+          <div class="cs-header"><span class="cs-name">Bacterial Spot Rot</span><span class="cs-value" style="color:var(--gray-400);">4.21%</span></div>
+          <div class="cs-bar"><div class="fill fill-red" style="width:4.21%;"></div></div>
+        </div>
+        <div class="class-score-item">
+          <div class="cs-header"><span class="cs-name">Black Rot</span><span class="cs-value" style="color:var(--gray-400);">2.87%</span></div>
+          <div class="cs-bar"><div class="fill fill-amber" style="width:2.87%;"></div></div>
+        </div>
+        <div class="class-score-item" style="border:2px solid var(--amber-400);">
+          <div class="cs-header"><span class="cs-name">Downy Mildew</span><span class="cs-value" style="color:var(--amber-600);">91.42%</span></div>
+          <div class="cs-bar"><div class="fill fill-amber" style="width:91.42%;"></div></div>
+        </div>
+        <div class="class-score-item">
+          <div class="cs-header"><span class="cs-name">No Disease</span><span class="cs-value" style="color:var(--gray-400);">1.50%</span></div>
+          <div class="cs-bar"><div class="fill fill-green" style="width:1.5%;"></div></div>
+        </div>
+      </div>
+
+      <div class="env-grid">
+        <div class="env-item"><div class="env-icon">&#127777;</div><div class="env-label">Temperature</div><div class="env-value">28&deg;C</div></div>
+        <div class="env-item"><div class="env-icon">&#128167;</div><div class="env-label">Humidity</div><div class="env-value">82%</div></div>
+        <div class="env-item"><div class="env-icon">&#127793;</div><div class="env-label">Soil Moisture</div><div class="env-value">45%</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISEASE CATALOG -->
+<section class="section" id="diseases">
+  <div class="container">
+    <div class="section-header">
+      <h2>Disease Catalog</h2>
+      <p>All diseases detected by the EfficientNet-B0 model with treatment information</p>
+      <div class="divider"></div>
+    </div>
+    <div class="disease-grid">
+      <div class="card card-hover disease-card bacterial">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-critical">High Risk</span>
+        </div>
+        <h4 style="margin-top:12px;">Bacterial Spot Rot</h4>
+        <p class="disease-desc">Caused by Xanthomonas bacteria. Creates water-soaked spots on leaves that turn brown/black with yellow halos. Spreads rapidly in warm, wet conditions.</p>
+        <div class="disease-treatment">
+          <div class="dt-label">Recommended Pesticide</div>
+          <div class="dt-value">Copper Hydroxide</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Dosage</div>
+            <div class="dt-value">15 ml</div>
+          </div>
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Severity Class</div>
+            <div class="dt-value" style="color:var(--red-600);">Critical</div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-hover disease-card blackrot">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-warning">Moderate Risk</span>
+        </div>
+        <h4 style="margin-top:12px;">Black Rot</h4>
+        <p class="disease-desc">Fungal disease caused by Xanthomonas campestris. Produces V-shaped yellow lesions on leaf margins that darken to black. Affects cruciferous crops.</p>
+        <div class="disease-treatment">
+          <div class="dt-label">Recommended Pesticide</div>
+          <div class="dt-value">Mancozeb</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Dosage</div>
+            <div class="dt-value">20 ml</div>
+          </div>
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Severity Class</div>
+            <div class="dt-value" style="color:var(--amber-600);">Moderate</div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-hover disease-card downy">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-warning">Moderate Risk</span>
+        </div>
+        <h4 style="margin-top:12px;">Downy Mildew</h4>
+        <p class="disease-desc">Caused by Peronospora parasitica. Appears as yellow patches on upper leaf surfaces with grayish-white fuzzy growth underneath. Thrives in cool, humid conditions.</p>
+        <div class="disease-treatment">
+          <div class="dt-label">Recommended Pesticide</div>
+          <div class="dt-value">Chlorothalonil</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Dosage</div>
+            <div class="dt-value">18 ml</div>
+          </div>
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Severity Class</div>
+            <div class="dt-value" style="color:var(--amber-600);">Moderate</div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-hover disease-card healthy">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-healthy">No Risk</span>
+        </div>
+        <h4 style="margin-top:12px;">No Disease (Healthy)</h4>
+        <p class="disease-desc">Plant shows no signs of disease. Leaf tissue is healthy with normal coloration. Continue regular monitoring and preventive care schedule.</p>
+        <div class="disease-treatment">
+          <div class="dt-label">Recommended Action</div>
+          <div class="dt-value" style="color:var(--primary-600);">None Required</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Dosage</div>
+            <div class="dt-value">0 ml</div>
+          </div>
+          <div class="disease-treatment" style="flex:1;">
+            <div class="dt-label">Severity Class</div>
+            <div class="dt-value" style="color:var(--primary-600);">Healthy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANT DASHBOARD -->
+<section class="section" id="dashboard" style="background:var(--earth-50);">
+  <div class="container">
+    <div class="section-header">
+      <h2>Plant Dashboard</h2>
+      <p>Overview of all monitored plants in your field</p>
+      <div class="divider"></div>
+    </div>
+    <div class="plants-grid">
+      <!-- Plant 1 - Healthy -->
+      <div class="card card-hover" onclick="document.getElementById('detail').scrollIntoView({behavior:'smooth'})">
+        <div class="plant-card-header">
+          <div><h4>PLT-001</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-healthy">Healthy</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--primary-600);">96%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:96%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">4%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:4%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--primary-600);">&#9650; Improving</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R1 C3</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">0 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 24</div></div>
+        </div>
+      </div>
+      <!-- Plant 2 - Warning -->
+      <div class="card card-hover">
+        <div class="plant-card-header">
+          <div><h4>PLT-004</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-warning">Black Rot</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--amber-600);">48%</span></div>
+          <div class="progress-bar"><div class="fill fill-amber" style="width:48%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">52%</span></div>
+          <div class="progress-bar"><div class="fill fill-amber" style="width:52%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--red-500);">&#9660; Worsening</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R2 C1</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">40 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 24</div></div>
+        </div>
+      </div>
+      <!-- Plant 3 - Critical -->
+      <div class="card card-hover">
+        <div class="plant-card-header">
+          <div><h4>PLT-007</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-critical">Downy Mildew</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--red-600);">27%</span></div>
+          <div class="progress-bar"><div class="fill fill-red" style="width:27%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">73%</span></div>
+          <div class="progress-bar"><div class="fill fill-red" style="width:73%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--red-500);">&#9660; Worsening</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R3 C5</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">36 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 24</div></div>
+        </div>
+      </div>
+      <!-- Plant 4 - Stable -->
+      <div class="card card-hover">
+        <div class="plant-card-header">
+          <div><h4>PLT-012</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-healthy">No Disease</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--primary-600);">99%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:99%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">1%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:1%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--gray-600);">&#8212; Stable</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R4 C2</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">0 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 23</div></div>
+        </div>
+      </div>
+      <!-- Plant 5 -->
+      <div class="card card-hover">
+        <div class="plant-card-header">
+          <div><h4>PLT-015</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-critical">Bacterial Spot</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--red-600);">22%</span></div>
+          <div class="progress-bar"><div class="fill fill-red" style="width:22%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">78%</span></div>
+          <div class="progress-bar"><div class="fill fill-red" style="width:78%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--red-500);">&#9660; Worsening</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R5 C4</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">60 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 24</div></div>
+        </div>
+      </div>
+      <!-- Plant 6 -->
+      <div class="card card-hover">
+        <div class="plant-card-header">
+          <div><h4>PLT-019</h4><span class="crop-type">Cauliflower</span></div>
+          <span class="badge badge-healthy">Healthy</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--primary-600);">88%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:88%;"></div></div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value">12%</span></div>
+          <div class="progress-bar"><div class="fill fill-green" style="width:12%;"></div></div>
+        </div>
+        <div class="plant-metrics">
+          <div class="plant-metric"><div class="pm-label">Trend</div><div class="pm-value" style="color:var(--primary-600);">&#9650; Improving</div></div>
+          <div class="plant-metric"><div class="pm-label">Position</div><div class="pm-value">R1 C7</div></div>
+          <div class="plant-metric"><div class="pm-label">Pesticide</div><div class="pm-value">15 ml</div></div>
+          <div class="plant-metric"><div class="pm-label">Last Scan</div><div class="pm-value">Sep 23</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANT DETAIL PAGE -->
+<section class="section" id="detail">
+  <div class="container">
+    <div class="section-header">
+      <h2>Plant Detail &mdash; PLT-007</h2>
+      <p>Comprehensive health profile, history, and treatment log</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="tabs" id="detailTabs">
+      <button class="tab active" onclick="switchTab('health')">Health Profile</button>
+      <button class="tab" onclick="switchTab('history')">Scan History</button>
+      <button class="tab" onclick="switchTab('sprays')">Spray Log</button>
+      <button class="tab" onclick="switchTab('trends')">Trends</button>
+      <button class="tab" onclick="switchTab('cohort')">Cohort</button>
+    </div>
+
+    <!-- HEALTH PROFILE TAB -->
+    <div class="tab-content active" id="tab-health">
+      <div class="card">
+        <div style="margin-bottom:20px; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--primary-100);">
+          <img src="https://picsum.photos/seed/cauliflower/800/300" alt="PLT-007 latest scan" style="width:100%; height:220px; object-fit:cover;"/>
+        </div>
+        <div class="plant-card-header">
+          <div>
+            <h2 style="font-size:24px;">PLT-007</h2>
+            <span class="crop-type" style="font-size:14px;">Cauliflower</span>
+          </div>
+          <span class="badge badge-critical">Downy Mildew</span>
+        </div>
+        <div style="margin-top:20px;">
+          <div class="progress-section">
+            <div class="progress-labels"><span class="pl-name">Health Score</span><span class="pl-value" style="color:var(--primary-600); font-size:18px;">27%</span></div>
+            <div class="progress-bar" style="height:12px;"><div class="fill fill-green" style="width:27%;"></div></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-labels"><span class="pl-name">Disease Severity</span><span class="pl-value" style="font-size:18px;">73%</span></div>
+            <div class="progress-bar" style="height:12px;"><div class="fill fill-red" style="width:73%;"></div></div>
+          </div>
+        </div>
+        <div class="health-stats">
+          <div class="health-stat"><div class="hs-label">Trend</div><div class="hs-value worsening">&#9660; Worsening</div></div>
+          <div class="health-stat"><div class="hs-label">Position</div><div class="hs-value">R3 C5</div></div>
+          <div class="health-stat"><div class="hs-label">Pesticide Used</div><div class="hs-value">36 ml</div></div>
+          <div class="health-stat"><div class="hs-label">Planted</div><div class="hs-value">Jun 15, 2026</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCAN HISTORY TAB -->
+    <div class="tab-content" id="tab-history">
+      <div class="card" style="padding:0;">
+        <h3 style="padding:20px 20px 8px; font-size:18px; font-weight:700;">Scan History</h3>
+        <div class="timeline">
+          <div class="timeline-item" onclick="this.querySelector('.timeline-details').classList.toggle('show')">
+            <div class="timeline-dot" style="background:var(--amber-500);"></div>
+            <div class="timeline-header">
+              <div><div class="timeline-date">Sep 24, 2026</div><div class="timeline-diagnosis">Downy Mildew detected</div></div>
+              <span class="badge badge-warning">73% severity</span>
+            </div>
+            <div class="timeline-details">
+              <div class="timeline-detail"><div class="td-label">Disease</div><div class="td-value">73%</div></div>
+              <div class="timeline-detail"><div class="td-label">Temp</div><div class="td-value">28&deg;C</div></div>
+              <div class="timeline-detail"><div class="td-label">Humidity</div><div class="td-value">82%</div></div>
+              <div class="timeline-detail"><div class="td-label">Pesticide</div><div class="td-value">Chlorothalonil</div></div>
+            </div>
+          </div>
+          <div class="timeline-item" onclick="this.querySelector('.timeline-details').classList.toggle('show')">
+            <div class="timeline-dot" style="background:var(--amber-500);"></div>
+            <div class="timeline-header">
+              <div><div class="timeline-date">Sep 23, 2026</div><div class="timeline-diagnosis">Downy Mildew - early stage</div></div>
+              <span class="badge badge-warning">55% severity</span>
+            </div>
+            <div class="timeline-details">
+              <div class="timeline-detail"><div class="td-label">Disease</div><div class="td-value">55%</div></div>
+              <div class="timeline-detail"><div class="td-label">Temp</div><div class="td-value">26&deg;C</div></div>
+              <div class="timeline-detail"><div class="td-label">Humidity</div><div class="td-value">78%</div></div>
+              <div class="timeline-detail"><div class="td-label">Soil</div><div class="td-value">50%</div></div>
+            </div>
+          </div>
+          <div class="timeline-item" onclick="this.querySelector('.timeline-details').classList.toggle('show')">
+            <div class="timeline-dot" style="background:var(--primary-500);"></div>
+            <div class="timeline-header">
+              <div><div class="timeline-date">Sep 22, 2026</div><div class="timeline-diagnosis">No disease - healthy leaf</div></div>
+              <span class="badge badge-healthy">8% severity</span>
+            </div>
+            <div class="timeline-details">
+              <div class="timeline-detail"><div class="td-label">Disease</div><div class="td-value">8%</div></div>
+              <div class="timeline-detail"><div class="td-label">Temp</div><div class="td-value">25&deg;C</div></div>
+              <div class="timeline-detail"><div class="td-label">Humidity</div><div class="td-value">65%</div></div>
+              <div class="timeline-detail"><div class="td-label">Cohort</div><div class="td-value">Isolated</div></div>
+            </div>
+          </div>
+          <div class="timeline-item" onclick="this.querySelector('.timeline-details').classList.toggle('show')">
+            <div class="timeline-dot" style="background:var(--primary-500);"></div>
+            <div class="timeline-header">
+              <div><div class="timeline-date">Sep 21, 2026</div><div class="timeline-diagnosis">No disease detected</div></div>
+              <span class="badge badge-healthy">3% severity</span>
+            </div>
+            <div class="timeline-details">
+              <div class="timeline-detail"><div class="td-label">Disease</div><div class="td-value">3%</div></div>
+              <div class="timeline-detail"><div class="td-label">Temp</div><div class="td-value">24&deg;C</div></div>
+              <div class="timeline-detail"><div class="td-label">Humidity</div><div class="td-value">60%</div></div>
+              <div class="timeline-detail"><div class="td-label">Soil</div><div class="td-value">42%</div></div>
+            </div>
+          </div>
+          <div class="timeline-item" onclick="this.querySelector('.timeline-details').classList.toggle('show')">
+            <div class="timeline-dot" style="background:var(--primary-500);"></div>
+            <div class="timeline-header">
+              <div><div class="timeline-date">Sep 20, 2026</div><div class="timeline-diagnosis">Healthy - no signs of disease</div></div>
+              <span class="badge badge-healthy">2% severity</span>
+            </div>
+            <div class="timeline-details">
+              <div class="timeline-detail"><div class="td-label">Disease</div><div class="td-value">2%</div></div>
+              <div class="timeline-detail"><div class="td-label">Temp</div><div class="td-value">23&deg;C</div></div>
+              <div class="timeline-detail"><div class="td-label">Humidity</div><div class="td-value">58%</div></div>
+              <div class="timeline-detail"><div class="td-label">Soil</div><div class="td-value">40%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPRAY LOG TAB -->
+    <div class="tab-content" id="tab-sprays">
+      <div class="card">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">Spray Decisions</h3>
+        <div class="spray-item">
+          <div class="spray-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+          </div>
+          <div class="spray-info">
+            <div class="spray-header">
+              <div><div class="spray-name">Chlorothalonil</div><div class="spray-time">Sep 24, 2026 at 16:45</div></div>
+              <span class="badge badge-success">success</span>
+            </div>
+            <div class="spray-meta">
+              <span>Dosage: <strong>18 ml</strong></span>
+              <span>Triggered by: <strong>Sep 24 scan</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="spray-item">
+          <div class="spray-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+          </div>
+          <div class="spray-info">
+            <div class="spray-header">
+              <div><div class="spray-name">Chlorothalonil</div><div class="spray-time">Sep 23, 2026 at 17:20</div></div>
+              <span class="badge badge-success">success</span>
+            </div>
+            <div class="spray-meta">
+              <span>Dosage: <strong>18 ml</strong></span>
+              <span>Triggered by: <strong>Sep 23 scan</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDS TAB -->
+    <div class="tab-content" id="tab-trends">
+      <div class="card">
+        <h3 style="font-size:18px; font-weight:700;">Health Trends</h3>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 800 260" preserveAspectRatio="xMidYMid meet">
+            <!-- Grid -->
+            <line x1="50" y1="20" x2="50" y2="230" stroke="#e5e7eb" stroke-width="1"/>
+            <line x1="50" y1="230" x2="770" y2="230" stroke="#e5e7eb" stroke-width="1"/>
+            <line x1="50" y1="178" x2="770" y2="178" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="4"/>
+            <line x1="50" y1="125" x2="770" y2="125" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="4"/>
+            <line x1="50" y1="72" x2="770" y2="72" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="4"/>
+            <!-- Y-axis labels -->
+            <text x="40" y="234" text-anchor="end" fill="#9ca3af" font-size="11">0</text>
+            <text x="40" y="182" text-anchor="end" fill="#9ca3af" font-size="11">25</text>
+            <text x="40" y="129" text-anchor="end" fill="#9ca3af" font-size="11">50</text>
+            <text x="40" y="76" text-anchor="end" fill="#9ca3af" font-size="11">75</text>
+            <text x="40" y="24" text-anchor="end" fill="#9ca3af" font-size="11">100</text>
+            <!-- X-axis labels -->
+            <text x="110" y="250" text-anchor="middle" fill="#9ca3af" font-size="11">Sep 20</text>
+            <text x="293" y="250" text-anchor="middle" fill="#9ca3af" font-size="11">Sep 21</text>
+            <text x="475" y="250" text-anchor="middle" fill="#9ca3af" font-size="11">Sep 22</text>
+            <text x="598" y="250" text-anchor="middle" fill="#9ca3af" font-size="11">Sep 23</text>
+            <text x="720" y="250" text-anchor="middle" fill="#9ca3af" font-size="11">Sep 24</text>
+            <!-- Severity line (red) - goes from 2 -> 3 -> 8 -> 55 -> 73 -->
+            <polyline fill="none" stroke="#ef4444" stroke-width="2.5" points="110,225.6 293,223.7 475,213.3 598,114.5 720,76.3"/>
+            <circle cx="110" cy="225.6" r="4" fill="#ef4444"/>
+            <circle cx="293" cy="223.7" r="4" fill="#ef4444"/>
+            <circle cx="475" cy="213.3" r="4" fill="#ef4444"/>
+            <circle cx="598" cy="114.5" r="4" fill="#ef4444"/>
+            <circle cx="720" cy="76.3" r="4" fill="#ef4444"/>
+            <!-- Disease % line (amber) - similar values -->
+            <polyline fill="none" stroke="#f59e0b" stroke-width="2.5" points="110,227.7 293,225.6 475,215.4 598,116.6 720,78.4"/>
+            <circle cx="110" cy="227.7" r="4" fill="#f59e0b"/>
+            <circle cx="293" cy="225.6" r="4" fill="#f59e0b"/>
+            <circle cx="475" cy="215.4" r="4" fill="#f59e0b"/>
+            <circle cx="598" cy="116.6" r="4" fill="#f59e0b"/>
+            <circle cx="720" cy="78.4" r="4" fill="#f59e0b"/>
+            <!-- Temp line (blue dashed) - 23, 24, 25, 26, 28 -->
+            <polyline fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6 4" points="110,181.4 293,179.3 475,177.2 598,175.1 720,170.9"/>
+            <circle cx="110" cy="181.4" r="3" fill="#3b82f6"/>
+            <circle cx="293" cy="179.3" r="3" fill="#3b82f6"/>
+            <circle cx="475" cy="177.2" r="3" fill="#3b82f6"/>
+            <circle cx="598" cy="175.1" r="3" fill="#3b82f6"/>
+            <circle cx="720" cy="170.9" r="3" fill="#3b82f6"/>
+          </svg>
+        </div>
+        <div class="chart-legend">
+          <span><span class="legend-line" style="background:#ef4444;"></span> Severity %</span>
+          <span><span class="legend-line" style="background:#f59e0b;"></span> Disease %</span>
+          <span><span class="legend-line" style="background:#3b82f6;"></span> Temp &deg;C</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COHORT TAB -->
+    <div class="tab-content" id="tab-cohort">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="padding:10px; background:var(--primary-50); color:var(--primary-600); border-radius:var(--radius-md);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 style="font-size:18px; font-weight:700;">Cohort Analysis</h3>
+        </div>
+        <div class="cohort-box">
+          <div class="cohort-header">
+            <span style="font-size:14px; color:var(--gray-500);">Verdict</span>
+            <span class="badge badge-info">Shared Issue</span>
+          </div>
+          <p class="cohort-text">This issue is shared across multiple nearby plants (PLT-006, PLT-007, PLT-008), suggesting an environmental cause. High humidity (82%) in Row 3 may be contributing to downy mildew spread.</p>
+        </div>
+        <div style="margin-top:20px;">
+          <h4 style="font-size:14px; font-weight:600; color:var(--gray-700); margin-bottom:12px;">Plants Compared</h4>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+            <div style="padding:14px; background:var(--gray-50); border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:14px; font-weight:600;">PLT-006</div>
+              <span class="badge badge-warning" style="margin-top:6px;">Downy Mildew 48%</span>
+            </div>
+            <div style="padding:14px; background:var(--gray-50); border-radius:var(--radius-md); text-align:center; border:2px solid var(--primary-400);">
+              <div style="font-size:14px; font-weight:600;">PLT-007</div>
+              <span class="badge badge-critical" style="margin-top:6px;">Downy Mildew 73%</span>
+            </div>
+            <div style="padding:14px; background:var(--gray-50); border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:14px; font-weight:600;">PLT-008</div>
+              <span class="badge badge-warning" style="margin-top:6px;">Downy Mildew 31%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+          DeepLeaf
+        </div>
+        <p class="footer-desc">AI-powered plant disease detection for smarter agriculture. Built with EfficientNet-B0, Next.js, and Express.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#analysis">Live Analysis</a></li>
+          <li><a href="#diseases">Disease Catalog</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Technology</h4>
+        <ul>
+          <li><a href="#">EfficientNet-B0</a></li>
+          <li><a href="#">Next.js</a></li>
+          <li><a href="#">Express.js</a></li>
+          <li><a href="#">MongoDB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">API Reference</a></li>
+          <li><a href="#">Raspberry Pi Setup</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 DeepLeaf. Smart Plant Disease Detection System. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Tab switching
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Toast notification
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Simulate upload
+function simulateUpload() {
+  showToast('Analyzing leaf image with EfficientNet-B0...');
+  setTimeout(() => {
+    document.getElementById('analysis').scrollIntoView({ behavior: 'smooth' });
+    showToast('Analysis complete! Downy Mildew detected.');
+  }, 1500);
+}
+
+// Smooth scroll for nav links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Active nav highlight on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.navbar-links a, .page-nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.getAttribute('id');
+  });
+  navLinks.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

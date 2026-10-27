@@ -1,0 +1,116 @@
+# ============================================================
+#  Capstone project – root .gitignore
+#  Covers: backend (Node/TypeScript), frontend (Next.js),
+#          Plant_disease (Python / ML)
+# ============================================================
+
+# ── Secrets / environment ────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── OS cruft ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── Editor & tool folders ────────────────────────────────────
+.vscode/
+.idea/
+.cursor/
+.commandcode/
+*.swp
+*.swo
+
+# ─────────────────────────────────────────────────────────────
+#  BACKEND  (Node / TypeScript)
+# ─────────────────────────────────────────────────────────────
+backend/node_modules/
+backend/dist/
+backend/*.tsbuildinfo
+backend/logs/
+backend/uploads/
+
+# Tesseract trained data (large binary – download separately)
+backend/eng.traineddata
+
+# ─────────────────────────────────────────────────────────────
+#  FRONTEND  (Next.js / TypeScript)
+# ─────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Yarn
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+frontend/.pnp
+frontend/.pnp.*
+
+# Vercel
+frontend/.vercel
+
+# ─────────────────────────────────────────────────────────────
+#  PLANT_DISEASE  (Python / ML)
+# ─────────────────────────────────────────────────────────────
+# Dataset – large, local-only
+Plant_disease/dataset/
+Plant_disease/splits/
+
+# Python bytecode & build artefacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+Plant_disease/venv/
+Plant_disease/.venv/
+Plant_disease/env/
+
+# ML outputs – generated, not source
+Plant_disease/outputs/predictions/
+Plant_disease/outputs/runs/
+Plant_disease/outputs/checkpoints/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Weights & large model files
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pkl
+*.joblib
+*.bin
+
+# ─────────────────────────────────────────────────────────────
+#  LOGS & DEBUG
+# ─────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# ─────────────────────────────────────────────────────────────
+#  MISC
+# ─────────────────────────────────────────────────────────────
+*.pem
+*.key
+*.cert
