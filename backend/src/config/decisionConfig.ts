@@ -29,16 +29,18 @@ export const DISEASE_THRESHOLDS: Record<string, DiseaseThreshold> = {
 export const CAMERA_RISK = { lowMax: 20, highMin: 60 };
 
 export const ACTION_MATRIX: Record<EnvRisk, Record<CameraRisk, Action>> = {
+  // Env conditions favour the disease
   favourable: {
-    none: "alert_only",
-    low: "alert_only",
+    none: "alert_only", // conditions favourable but no camera evidence → alert only
+    low: "alert_only",  // low camera risk → alert only
     medium: "spray",
     high: "spray_urgent",
   },
+  // Env conditions do NOT favour the disease
   not_favourable: {
     none: "no_action",
     low: "no_action",
-    medium: "spray",
+    medium: "spray",        // disease visible even without favourable env → still spray
     high: "spray_urgent",
   },
 };

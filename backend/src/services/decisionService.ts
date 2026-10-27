@@ -20,19 +20,39 @@ export interface Decision {
   action: Action;
   should_spray: boolean;
   urgency: "none" | "normal" | "urgent";
-  pesticide: string;
+  /** Water quantity to spray in mL, derived from disease severity % */
   dosage_ml: number;
   env_risk: EnvRisk;
   camera_risk: CameraRisk;
+  /** Environment + threshold detail for debugging */
   reason: string;
+  /** Human-readable recommendation for the device/UI */
   message: string;
+  /** Alert message when environment is favourable but no spray is needed */
+  env_alert?: string;
 }
+
+// ── Dosage lookup ────────────────────────────────────────────────────────────
+// Based on the disease severity table (illustrative demo values):
+//   Healthy (0%)       →  0 mL
+//   Low     (1–10%)    → 10 mL
+//   Moderate(11–25%)   → 20 mL
+//   High    (26–50%)   → 30 mL
+//   Very high (>50%)   → 40 mL
+export const dosageFromSeverity = (pct: number | undefined): number => {
+  if (pct === undefined || pct <= 0) return 0;
+  if (pct <= 10) return 10;
+  if (pct <= 25) return 20;
+  if (pct <= 50) return 30;
+  return 40;
+};
 
 const prettyDisease = (disease: string): string => {
   const spaced = disease.replace(/_/g, " ");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 };
 
+// ── Environmental risk ───────────────────────────────────────────────────────
 export const assessEnvRisk = (
   disease: string,
   readings: Readings
@@ -64,21 +84,20 @@ export const assessEnvRisk = (
       : `humidity ${readings.humidity}% ${humidityOk ? ">=" : "<"} ${rule.humidity.min}`,
     readings.soil_moisture === undefined
       ? "soil_moisture missing"
-      : `soil_moisture ${readings.soil_moisture}% ${
-          moistureOk ? ">=" : "<"
-        } ${rule.soil_moisture.min}`,
+      : `soil_moisture ${readings.soil_moisture}% ${moistureOk ? ">=" : "<"
+      } ${rule.soil_moisture.min}`,
   ];
 
   const favourable = tempOk && humidityOk && moistureOk;
 
   return {
     risk: favourable ? "favourable" : "not_favourable",
-    reason: `${parts.join(", ")} -> ${
-      favourable ? `favours ${disease}` : `not favourable for ${disease}`
-    }`,
+    reason: `${parts.join(", ")} -> ${favourable ? `favours ${disease}` : `not favourable for ${disease}`
+      }`,
   };
 };
 
+// ── Camera risk ──────────────────────────────────────────────────────────────
 export const assessCameraRisk = (
   disease: string,
   score: number | undefined
@@ -95,6 +114,7 @@ export const assessCameraRisk = (
   return "high";
 };
 
+// ── Master decide function ────────────────────────────────────────────────────
 export const decide = (
   prediction: MLPrediction,
   readings: Readings
@@ -110,18 +130,20 @@ export const decide = (
   const urgency: Decision["urgency"] =
     action === "spray_urgent" ? "urgent" : action === "spray" ? "normal" : "none";
 
-  const pesticide = prediction.recommended_pesticide;
-  const dosage_ml = prediction.recommended_dosage_ml;
+  // Dosage is purely severity-driven (from the image table)
+  const dosage_ml = dosageFromSeverity(prediction.disease_percent);
   const name = prettyDisease(prediction.disease);
-  const envClause = envRisk === "favourable" ? " under favourable conditions" : "";
 
   let message: string;
+  let env_alert: string | undefined;
+
   if (action === "alert_only") {
-    message = `Conditions favour ${name}. Monitor - no spray needed.`;
+    env_alert = `Environmental conditions favour ${name}. Monitor closely.`;
+    message = `Conditions favour ${name}. No spray needed yet – keep monitoring.`;
   } else if (action === "spray") {
-    message = `${name} detected${envClause}. Spray with ${pesticide} (${dosage_ml} ml).`;
+    message = `${name} detected. Apply ${dosage_ml} mL of water spray.`;
   } else if (action === "spray_urgent") {
-    message = `${name} severe${envClause}. Spray urgently with ${pesticide} (${dosage_ml} ml).`;
+    message = `${name} – severe infection. Apply ${dosage_ml} mL urgently.`;
   } else {
     message = "No action required.";
   }
@@ -130,11 +152,11 @@ export const decide = (
     action,
     should_spray,
     urgency,
-    pesticide,
     dosage_ml,
     env_risk: envRisk,
     camera_risk: cameraRisk,
     reason,
     message,
+    ...(env_alert ? { env_alert } : {}),
   };
 };
