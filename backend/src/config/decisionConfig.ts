@@ -5,24 +5,20 @@ export type Action = "no_action" | "alert_only" | "spray" | "spray_urgent";
 export interface DiseaseThreshold {
   temp: { min: number; max: number };
   humidity: { min: number };
-  soil_moisture: { min: number };
 }
 
 export const DISEASE_THRESHOLDS: Record<string, DiseaseThreshold> = {
   downy_mildew: {
     temp: { min: 12, max: 27 },
     humidity: { min: 85 },
-    soil_moisture: { min: 60 },
   },
   black_rot: {
     temp: { min: 24, max: 35 },
     humidity: { min: 82 },
-    soil_moisture: { min: 60 },
   },
   bacterial_spot_rot: {
     temp: { min: 20, max: 25 },
     humidity: { min: 85 },
-    soil_moisture: { min: 70 },
   },
 };
 

@@ -29,7 +29,7 @@ export const scanPlant = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "No image file provided" });
     }
 
-    const { device_id, soil, moisture, temperature, humidity } = req.body;
+    const { device_id, temperature, humidity } = req.body;
     const manualLabel =
       typeof req.body.label === "string" ? req.body.label.trim() : "";
 
@@ -67,8 +67,6 @@ export const scanPlant = async (req: Request, res: Response) => {
     const envData = {
       temp: toNumber(temperature),
       humidity: toNumber(humidity),
-      soil_moisture: toNumber(moisture),
-      soil: toNumber(soil),
     };
 
     // Decision logic uses disease_percent (= affected_pct from ML) as the
@@ -76,7 +74,6 @@ export const scanPlant = async (req: Request, res: Response) => {
     const decision = decide(prediction, {
       temp: envData.temp,
       humidity: envData.humidity,
-      soil_moisture: envData.soil_moisture,
     });
 
     const previousLog = await DailyLog.findOne({
@@ -166,8 +163,6 @@ export const scanPlant = async (req: Request, res: Response) => {
         readings: {
           temperature: envData.temp ?? null,
           humidity: envData.humidity ?? null,
-          soil: envData.soil ?? null,
-          moisture: envData.soil_moisture ?? null,
         },
       },
 

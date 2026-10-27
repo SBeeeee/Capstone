@@ -9,8 +9,6 @@ export interface IDailyLog extends Document {
   env_data: {
     temp: number;
     humidity: number;
-    soil_moisture: number;
-    soil: number;
   };
   diagnosis: string;
   cohort_verdict: "isolated" | "shared" | null;
@@ -39,8 +37,6 @@ const DailyLogSchema = new Schema<IDailyLog>(
     env_data: {
       temp: { type: Number },
       humidity: { type: Number },
-      soil_moisture: { type: Number },
-      soil: { type: Number },
     },
     diagnosis: { type: String },
     cohort_verdict: {

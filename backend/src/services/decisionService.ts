@@ -13,7 +13,6 @@ export type { Action, CameraRisk, EnvRisk };
 export interface Readings {
   temp?: number;
   humidity?: number;
-  soil_moisture?: number;
 }
 
 export interface Decision {
@@ -71,9 +70,6 @@ export const assessEnvRisk = (
     readings.temp <= rule.temp.max;
   const humidityOk =
     readings.humidity !== undefined && readings.humidity >= rule.humidity.min;
-  const moistureOk =
-    readings.soil_moisture !== undefined &&
-    readings.soil_moisture >= rule.soil_moisture.min;
 
   const parts = [
     readings.temp === undefined
@@ -82,13 +78,9 @@ export const assessEnvRisk = (
     readings.humidity === undefined
       ? "humidity missing"
       : `humidity ${readings.humidity}% ${humidityOk ? ">=" : "<"} ${rule.humidity.min}`,
-    readings.soil_moisture === undefined
-      ? "soil_moisture missing"
-      : `soil_moisture ${readings.soil_moisture}% ${moistureOk ? ">=" : "<"
-      } ${rule.soil_moisture.min}`,
   ];
 
-  const favourable = tempOk && humidityOk && moistureOk;
+  const favourable = tempOk && humidityOk;
 
   return {
     risk: favourable ? "favourable" : "not_favourable",

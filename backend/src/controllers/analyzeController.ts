@@ -32,7 +32,6 @@ export const analyzeImage = async (req: Request, res: Response) => {
         env_data: {
           temp: envParsed.temp,
           humidity: envParsed.humidity,
-          soil_moisture: envParsed.soil_moisture,
         },
         diagnosis: prediction.disease,
         recommended_pesticide: prediction.recommended_pesticide,
