@@ -3,7 +3,16 @@ import axios from "axios";
 const ML_API_URL =
   process.env.ML_API_URL || "https://plant-disease-1-cada.onrender.com";
 
-// ─── Raw API shapes ──────────────────────────────────────────────────────────
+// ─── Raw API shapes ───────────────────────────────────────────────────────────
+
+/** Values the ML service puts in the top-level `status` field */
+export type MLStatus =
+  | "confident"
+  | "uncertain"
+  | "not_cauliflower"
+  | "retake_photo"
+  | "out_of_scope"
+  | "no_evidence";
 
 export interface MLInsect {
   found: boolean;
@@ -21,7 +30,7 @@ export interface MLRegion {
 }
 
 export interface MLPlant {
-  stage: string;
+  stage: string;           // none | early | moderate | severe | critical
   affected_pct: number;
   lesion_count: number;
   insect: MLInsect;
@@ -36,10 +45,11 @@ export interface MLAdvice {
 }
 
 export interface MLApiResponse {
-  status: string;        // "confident" | "uncertain" | etc.
+  status: MLStatus;
+  status_reason?: string;  // set when status is retake_photo / out_of_scope etc.
   reliable: boolean;
-  prediction: string;    // e.g. "black_rot"
-  confidence: number;    // 0–1
+  prediction: string | null; // bacterial_spot_rot | black_rot | downy_mildew | no_disease | insect_damage | null
+  confidence: number;
   message: string;
   class_probabilities: Record<string, number>;
   plant: MLPlant;
@@ -48,38 +58,47 @@ export interface MLApiResponse {
   insect_advice: string | null;
 }
 
-// ─── Internal prediction shape used by the rest of the app ──────────────────
+/** Shape returned by POST /jobs */
+interface JobSubmitResponse {
+  job_id: string;
+  status: string;
+  result_url: string;
+}
+
+/** Shape returned by GET /jobs/{job_id} */
+interface JobPollResponse {
+  job_id: string;
+  status: "queued" | "running" | "done" | "error";
+  filename?: string;
+  result?: MLApiResponse;
+  detail?: string;
+}
+
+// ─── Internal prediction shape used by the rest of the app ───────────────────
 
 export interface MLPrediction {
-  disease: string;
+  disease: string;               // prediction value (or "unknown")
   confidence: number;
-  /** Overall plant stage: "none" | "mild" | "moderate" | "severe" */
-  stage: string;
-  /** Percentage of the plant affected (0–100) */
-  disease_percent: number;
-  /** Lesion count from the plant-level analysis */
-  lesion_count: number;
-  /** Whether the ML result is considered reliable */
+  /** ML top-level status — determines how to treat the result */
+  ml_status: MLStatus;
+  status_reason: string | null;
+  /** true only for "confident" and "uncertain" */
   reliable: boolean;
-  /** Full human-readable diagnosis message from the ML service */
+  stage: string;
+  disease_percent: number;
+  lesion_count: number;
   ml_message: string;
   recommended_pesticide: string;
   recommended_dosage_ml: number;
-  /** Per-class probability scores */
   class_probabilities: Record<string, number>;
-  /** Region-level breakdown */
   regions: MLRegion[];
-  /** Insect findings */
   insect: MLInsect;
-  /** Base-64 encoded overlay JPEG (may be null) */
   overlay_jpeg_b64: string | null;
-  /** Advice block from the ML service (may be null) */
   advice: MLAdvice | null;
-  /** Insect-specific advice (may be null) */
   insect_advice: string | null;
 }
 
-// ─── Pesticide lookup ────────────────────────────────────────────────────────
+// ─── Pesticide lookup ─────────────────────────────────────────────────────────
 
 const PESTICIDE_MAP: Record<string, { pesticide: string; dosage_ml: number }> =
 {
@@ -87,23 +106,27 @@ const PESTICIDE_MAP: Record<string, { pesticide: string; dosage_ml: number }> =
   black_rot: { pesticide: "Mancozeb", dosage_ml: 20 },
   downy_mildew: { pesticide: "Chlorothalonil", dosage_ml: 18 },
   no_disease: { pesticide: "None required", dosage_ml: 0 },
+  insect_damage: { pesticide: "Consult agronomist for insecticide", dosage_ml: 0 },
 };
 
-// ─── Mapping ─────────────────────────────────────────────────────────────────
+// ─── Mapping ──────────────────────────────────────────────────────────────────
 
 function mapToMLPrediction(api: MLApiResponse): MLPrediction {
-  const treatment = PESTICIDE_MAP[api.prediction] ?? {
+  const disease = api.prediction ?? "unknown";
+  const treatment = PESTICIDE_MAP[disease] ?? {
     pesticide: "Consult agronomist",
     dosage_ml: 0,
   };
 
   return {
-    disease: api.prediction,
+    disease,
     confidence: api.confidence,
+    ml_status: api.status,
+    status_reason: api.status_reason ?? null,
+    reliable: api.reliable,
     stage: api.plant?.stage ?? "none",
     disease_percent: api.plant?.affected_pct ?? 0,
     lesion_count: api.plant?.lesion_count ?? 0,
-    reliable: api.reliable,
     ml_message: api.message,
     recommended_pesticide: treatment.pesticide,
     recommended_dosage_ml: treatment.dosage_ml,
@@ -121,25 +144,76 @@ function mapToMLPrediction(api: MLApiResponse): MLPrediction {
   };
 }
 
+// ─── Async helpers ────────────────────────────────────────────────────────────
+
+const POLL_INTERVAL_MS = 5_000;   // poll every 5 s
+const POLL_MAX_ATTEMPTS = 120;     // 10 minutes max
+const JOB_TIMEOUT_MS = 120_000; // 2 min for submit / poll requests
+
+async function submitJob(
+  imageBuffer: Buffer,
+  filename: string,
+  mimeType: string
+): Promise<string> {
+  const formData = new FormData();
+  const blob = new Blob([new Uint8Array(imageBuffer)], { type: mimeType });
+  formData.append("file", blob, filename);
+
+  const res = await axios.post<JobSubmitResponse>(
+    `${ML_API_URL}/jobs`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: JOB_TIMEOUT_MS,
+    }
+  );
+  return res.data.job_id;
+}
+
+async function pollJob(jobId: string): Promise<MLApiResponse> {
+  const sleep = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
+    await sleep(POLL_INTERVAL_MS);
+
+    const res = await axios.get<JobPollResponse>(
+      `${ML_API_URL}/jobs/${jobId}`,
+      { timeout: JOB_TIMEOUT_MS }
+    );
+    const job = res.data;
+
+    if (job.status === "done") {
+      if (!job.result) {
+        throw new Error("ML job completed but result is empty");
+      }
+      return job.result;
+    }
+
+    if (job.status === "error") {
+      throw new Error(`ML job failed: ${job.detail ?? "unknown error"}`);
+    }
+
+    // queued | running → keep polling
+  }
+
+  throw new Error("ML job timed out after 10 minutes");
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+/**
+ * Submit an image to the ML service via the async job queue and return a
+ * structured MLPrediction once the job completes.
+ *
+ * Flow: POST /jobs  →  poll GET /jobs/{id} every 5 s  →  map result
+ */
 export async function analyzePlantImage(
   imageBuffer: Buffer,
   filename: string,
   mimeType: string = "image/jpeg"
 ): Promise<MLPrediction> {
-  const formData = new FormData();
-  const blob = new Blob([new Uint8Array(imageBuffer)], { type: mimeType });
-  formData.append("file", blob, filename);
-
-  const res = await axios.post<MLApiResponse>(
-    `${ML_API_URL}/predict`,
-    formData,
-    {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 60000, // 60 s – remote Render service can be slow on cold start
-    }
-  );
-
-  return mapToMLPrediction(res.data);
+  const jobId = await submitJob(imageBuffer, filename, mimeType);
+  const result = await pollJob(jobId);
+  return mapToMLPrediction(result);
 }

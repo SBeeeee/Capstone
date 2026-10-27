@@ -44,6 +44,8 @@ export const analyzeImage = async (req: Request, res: Response) => {
       plant_id: plant_id || null,
       diagnosis: prediction.disease,
       confidence: prediction.confidence,
+      ml_status: prediction.ml_status,
+      status_reason: prediction.status_reason,
       reliable: prediction.reliable,
       stage: prediction.stage,
       disease_percent: prediction.disease_percent,
